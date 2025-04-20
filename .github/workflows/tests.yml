@@ -30,6 +30,5 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
-          uniqueId: '${{ matrix.os }}-${{ matrix.config }}'
       - name: Run tests (full workflow)
         run: cmake --workflow --preset test-${{ matrix.config }}
