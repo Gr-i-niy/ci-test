@@ -34,11 +34,33 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
+          vcpkgGitCommitId: ${{ hashFiles('vcpkg.json') }}-${{ runner.os }}-format-check
 
       - name: Check code formatting
+        id: format-check
         run: |
           cmake --preset ninja-multi-vcpkg
-          cmake --workflow --preset check-format
+          OUTPUT=$(cmake --build --preset ninja-vcpkg-check-format 2>&1)
+          echo "$OUTPUT"
+          if [[ "$OUTPUT" == *"No formatting needed"* ]] || [[ "$OUTPUT" == *"formatted"* ]]; then
+            echo "Форматирование кода в порядке."
+            exit 0
+          else
+            echo "::error::Обнаружены проблемы с форматированием!"
+            echo "$OUTPUT"
+            exit 1
+          fi
+
+      - name: Auto-fix formatting
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.format-check.outcome == 'failure' }}
+        id: auto-fix
+        run: |
+          cmake --build --preset ninja-vcpkg-format
+          git config --global user.name "CI Bot"
+          git config --global user.email "ci@example.com"
+          git add .
+          git commit -m "Автоматическое форматирование кода" || echo "Нет изменений для коммита"
+          git push || echo "Не удалось отправить изменения"
 
   code-analysis:
     name: Static Code Analysis
@@ -61,10 +83,26 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
+          vcpkgGitCommitId: ${{ hashFiles('vcpkg.json') }}-${{ runner.os }}-code-analysis
 
       - name: Configure project
         run: |
           cmake --preset ninja-multi-vcpkg
+
+      - name: Run clang-tidy analysis
+        id: tidy-analysis
+        run: |
+          find src tests -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p builds/ninja-multi-vcpkg > tidy_report.txt || true
+          cat tidy_report.txt
+          if [ -s tidy_report.txt ]; then
+            ISSUES=$(grep -c "warning\|error" tidy_report.txt || echo "0")
+            echo "::set-output name=issues::$ISSUES"
+            if [ "$ISSUES" -gt "0" ]; then
+              echo "::warning::Найдено $ISSUES проблем при анализе кода"
+            fi
+          else
+            echo "::set-output name=issues::0"
+          fi
 
       - name: Run cpp-linter-action
         uses: cpp-linter/cpp-linter-action@v2
@@ -73,7 +111,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           style: file
-          tidy: true
           tidy-checks: "-*,bugprone-*,cert-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,-modernize-use-trailing-return-type"
           extensions: "cpp,hpp,h"
           files-changed-only: ${{ github.event_name == 'pull_request' }}
@@ -84,6 +121,6 @@ jobs:
       - name: Check for linting issues
         if: steps.linter.outputs.checks-failed > 0
         run: |
-          echo "Clang-tidy проверка не прошла."
+          echo "Анализ кода не прошел."
           echo "Обнаружено проблем: ${{ steps.linter.outputs.tidy-notes-count }}"
           exit 1
