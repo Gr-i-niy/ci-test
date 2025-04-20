@@ -2,9 +2,10 @@ name: Cross-Platform Build
 
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
-      - v11
       - main
 
 jobs:
