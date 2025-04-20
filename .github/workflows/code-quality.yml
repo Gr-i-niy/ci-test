@@ -66,8 +66,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: lukka/get-cmake@latest
+
+      - name: Restore from cache and setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Configure project
         run: |
@@ -84,6 +91,8 @@ jobs:
           files-changed-only: ${{ github.event_name == 'pull_request' }}
           database: "builds/ninja-multi-vcpkg/compile_commands.json"
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
+          format-review: 'true'
+          tidy-review: 'true'
 
       - name: Fail fast?!
         if: steps.linter.outputs.checks-failed > 0
