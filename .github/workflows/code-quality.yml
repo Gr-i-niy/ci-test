@@ -1,17 +1,33 @@
-name: Code Quality
-
+name: Code quality
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
+    paths-ignore:
+      - docs/**
+      - README.md
+      - .gitignore
+      - build/**
+      - out/**
+      - vcpkg/**
+      - assets/**
+      - cmake/**
+      - scripts/**
+      - shaders/**
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - docs/**
+      - README.md
+      - .gitignore
+      - build/**
+      - out/**
+      - vcpkg/**
+      - assets/**
+      - cmake/**
+      - scripts/**
+      - shaders/**
 
 jobs:
   format-check:
@@ -34,93 +50,41 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
-          vcpkgGitCommitId: ${{ hashFiles('vcpkg.json') }}-${{ runner.os }}-format-check
 
       - name: Check code formatting
         id: format-check
         run: |
           cmake --preset ninja-multi-vcpkg
-          OUTPUT=$(cmake --build --preset ninja-vcpkg-check-format 2>&1)
-          echo "$OUTPUT"
-          if [[ "$OUTPUT" == *"No formatting needed"* ]] || [[ "$OUTPUT" == *"formatted"* ]]; then
-            echo "Форматирование кода в порядке."
-            exit 0
-          else
-            echo "::error::Обнаружены проблемы с форматированием!"
-            echo "$OUTPUT"
-            exit 1
-          fi
+          cmake --build --preset ninja-vcpkg-check-format
 
-      - name: Auto-fix formatting
-        if: ${{ github.event_name == 'pull_request' && failure() && steps.format-check.outcome == 'failure' }}
-        id: auto-fix
-        run: |
-          cmake --build --preset ninja-vcpkg-format
-          git config --global user.name "CI Bot"
-          git config --global user.email "ci@example.com"
-          git add .
-          git commit -m "Автоматическое форматирование кода" || echo "Нет изменений для коммита"
-          git push || echo "Не удалось отправить изменения"
-
-  code-analysis:
+  cpp-linter:
     name: Static Code Analysis
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Install required tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-tidy
+      - uses: actions/checkout@v4
 
       - uses: lukka/get-cmake@latest
-
-      - name: Restore from cache and setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
-          vcpkgGitCommitId: ${{ hashFiles('vcpkg.json') }}-${{ runner.os }}-code-analysis
 
       - name: Configure project
         run: |
           cmake --preset ninja-multi-vcpkg
 
-      - name: Run clang-tidy analysis
-        id: tidy-analysis
-        run: |
-          find src tests -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p builds/ninja-multi-vcpkg > tidy_report.txt || true
-          cat tidy_report.txt
-          if [ -s tidy_report.txt ]; then
-            ISSUES=$(grep -c "warning\|error" tidy_report.txt || echo "0")
-            echo "::set-output name=issues::$ISSUES"
-            if [ "$ISSUES" -gt "0" ]; then
-              echo "::warning::Найдено $ISSUES проблем при анализе кода"
-            fi
-          else
-            echo "::set-output name=issues::0"
-          fi
-
-      - name: Run cpp-linter-action
-        uses: cpp-linter/cpp-linter-action@v2
+      - uses: cpp-linter/cpp-linter-action@v2
         id: linter
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          style: file
+          style: 'file'
           tidy-checks: "-*,bugprone-*,cert-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,-modernize-use-trailing-return-type"
-          extensions: "cpp,hpp,h"
+          extensions: "cpp,hpp,h,cc,hh,cxx,hxx"
           files-changed-only: ${{ github.event_name == 'pull_request' }}
           database: "builds/ninja-multi-vcpkg/compile_commands.json"
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
-          no-lgtm: true
 
-      - name: Check for linting issues
+      - name: Fail fast?!
         if: steps.linter.outputs.checks-failed > 0
-        run: |
-          echo "Анализ кода не прошел."
-          echo "Обнаружено проблем: ${{ steps.linter.outputs.tidy-notes-count }}"
-          exit 1
+        run: exit 1
