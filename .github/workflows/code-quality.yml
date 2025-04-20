@@ -85,13 +85,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          ignore: 'builds|.github|cmake-build-debug|vcpkg'
+          version: '19'
           style: 'file'
           database: 'builds/ninja-multi-vcpkg'
-          extensions: "cpp,hpp,h,cc,hh,cxx,hxx"
+          extensions: "cpp,hpp,h"
           step-summary: 'true'
           no-lgtm: 'false'
           files-changed-only: 'false'
-          thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
+          thread-comments: 'update'
           format-review: 'true'
           tidy-review: 'true'
 
