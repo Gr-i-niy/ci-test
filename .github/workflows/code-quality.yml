@@ -86,10 +86,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           style: 'file'
-          tidy-checks: "-*,bugprone-*,cert-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,-modernize-use-trailing-return-type"
+          database: 'builds/ninja-multi-vcpkg'
           extensions: "cpp,hpp,h,cc,hh,cxx,hxx"
-          files-changed-only: ${{ github.event_name == 'pull_request' }}
-          database: "builds/ninja-multi-vcpkg/compile_commands.json"
+          step-summary: 'true'
+          no-lgtm: 'false'
+          files-changed-only: 'false'
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           format-review: 'true'
           tidy-review: 'true'
