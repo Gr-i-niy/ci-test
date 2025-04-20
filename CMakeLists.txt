@@ -1,46 +1,64 @@
-# CMakeLists.txt
 cmake_minimum_required(VERSION 3.15)
-project(cpp_template)
+project(finance_manager)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-if(NOT APPLE)
-    # set(CMAKE_CXX_CLANG_TIDY clang-tidy)
-endif()
 
-# Find dependencies provided by vcpkg (via vcpkg.cmake)
+# Найти зависимости через vcpkg
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
+# Пути к заголовочным файлам
+include_directories(include)
+
+# Основные исходные файлы
 set(
-    CPP_TEMPLATE_SOURCES
-    src/main.cpp
+        FINANCE_MANAGER_SOURCES
+        src/main.cpp
+        src/transaction.cpp
+        src/finance_manager.cpp
 )
+
+# Тестовые исходные файлы
 set(
-    CPP_TEMPLATE_TEST_SOURCES
-    src/test.cpp
+        FINANCE_MANAGER_TEST_SOURCES
+        tests/finance_manager_test.cpp
+        src/transaction.cpp
+        src/finance_manager.cpp
 )
 
-# main target
-add_executable(main ${CPP_TEMPLATE_SOURCES})
-target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3 fmt::fmt-header-only)
-set_property(TARGET main PROPERTY CXX_STANDARD 23)
+# Основной исполняемый файл
+add_executable(finance_manager ${FINANCE_MANAGER_SOURCES})
+target_link_libraries(finance_manager PRIVATE
+        unofficial::sqlite3::sqlite3
+        fmt::fmt-header-only
+)
+set_property(TARGET finance_manager PROPERTY CXX_STANDARD 23)
 
-# tests target
-add_executable(tests ${CPP_TEMPLATE_TEST_SOURCES})
-target_link_libraries(tests PRIVATE unofficial::sqlite3::sqlite3 fmt::fmt-header-only)
-set_property(TARGET tests PROPERTY CXX_STANDARD 23)
+# Тестовый исполняемый файл
+add_executable(finance_tests ${FINANCE_MANAGER_TEST_SOURCES})
+target_link_libraries(finance_tests PRIVATE
+        unofficial::sqlite3::sqlite3
+        fmt::fmt-header-only
+        GTest::gtest
+        GTest::gtest_main
+)
+set_property(TARGET finance_tests PROPERTY CXX_STANDARD 23)
+
+# Настройка тестирования
 enable_testing()
-add_test(tests tests)
+add_test(NAME FinanceManagerTests COMMAND finance_tests)
 
+# Цели для проверки и форматирования кода
 add_custom_target(
-    check-format
-    COMMAND clang-format --dry-run ${CPP_TEMPLATE_SOURCES} ${CPP_TEMPLATE_TEST_SOURCES}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "checking format in src..."
+        check-format
+        COMMAND clang-format --dry-run ${FINANCE_MANAGER_SOURCES} ${FINANCE_MANAGER_TEST_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "checking format in sources..."
 )
 
 add_custom_target(
-    format
-    COMMAND clang-format -i ${CPP_TEMPLATE_SOURCES} ${CPP_TEMPLATE_TEST_SOURCES}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "checking format in src..."
+        format
+        COMMAND clang-format -i ${FINANCE_MANAGER_SOURCES} ${FINANCE_MANAGER_TEST_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "formatting sources..."
 )
