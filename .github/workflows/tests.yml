@@ -18,6 +18,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         config: [debug, release]
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cxx_compiler: cl
+          - os: ubuntu-latest
+            c_compiler: clang
+            cxx_compiler: clang++
 
     steps:
       - uses: actions/checkout@v4
