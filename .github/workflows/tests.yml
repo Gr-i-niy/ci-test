@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - main
+      - feat/add-financial-service
   pull_request:
     branches:
       - main
 
 jobs:
   unit-tests:
-    name: Unit Tests on ${{ matrix.os }}
+    name: Unit Tests on ${{ matrix.os }} for ${{ matrix.config }} config
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

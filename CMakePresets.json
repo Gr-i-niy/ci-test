@@ -1,5 +1,5 @@
 {
-    "version": 6,
+    "version": 8,
     "cmakeMinimumRequired": {
         "major": 3,
         "minor": 21,
@@ -40,25 +40,27 @@
         {
             "name": "ninja-vcpkg-check-format",
             "configurePreset": "ninja-multi-vcpkg",
-            "displayName": "Build",
+            "displayName": "Check Format",
             "targets": [
                 "check-format"
             ],
-            "description": "Build with Ninja/vcpkg check-format"
+            "description": "Run code format check"
         },
         {
             "name": "ninja-vcpkg-format",
             "configurePreset": "ninja-multi-vcpkg",
-            "displayName": "Build",
+            "displayName": "Format Code",
             "targets": [
                 "format"
             ],
-            "description": "Build with Ninja/vcpkg format"
+            "description": "Format code with clang-format"
         }
     ],
     "workflowPresets": [
         {
             "name": "format",
+            "displayName": "Format Code",
+            "description": "Workflow to format code",
             "steps": [
                 {
                     "name": "ninja-multi-vcpkg",
@@ -72,6 +74,8 @@
         },
         {
             "name": "check-format",
+            "displayName": "Check Format",
+            "description": "Workflow to check code formatting",
             "steps": [
                 {
                     "name": "ninja-multi-vcpkg",
@@ -80,6 +84,44 @@
                 {
                     "name": "ninja-vcpkg-check-format",
                     "type": "build"
+                }
+            ]
+        },
+        {
+            "name": "test-debug",
+            "displayName": "Test Debug",
+            "description": "Workflow to build and test in Debug mode",
+            "steps": [
+                {
+                    "name": "ninja-multi-vcpkg",
+                    "type": "configure"
+                },
+                {
+                    "name": "ninja-vcpkg-debug",
+                    "type": "build"
+                },
+                {
+                    "name": "test-debug",
+                    "type": "test"
+                }
+            ]
+        },
+        {
+            "name": "test-release",
+            "displayName": "Test Release",
+            "description": "Workflow to build and test in Release mode",
+            "steps": [
+                {
+                    "name": "ninja-multi-vcpkg",
+                    "type": "configure"
+                },
+                {
+                    "name": "ninja-vcpkg-release",
+                    "type": "build"
+                },
+                {
+                    "name": "test-release",
+                    "type": "test"
                 }
             ]
         }
