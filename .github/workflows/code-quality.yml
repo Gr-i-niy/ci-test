@@ -4,15 +4,19 @@ on:
   push:
     branches:
       - main
-      - feat/add-financial-service
   pull_request:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   format-check:
     name: Code Formatting Check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -35,3 +39,51 @@ jobs:
         run: |
           cmake --preset ninja-multi-vcpkg
           cmake --workflow --preset check-format
+
+  code-analysis:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Restore from cache and setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Configure project
+        run: |
+          cmake --preset ninja-multi-vcpkg
+
+      - name: Run cpp-linter-action
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: file
+          tidy: true
+          tidy-checks: "-*,bugprone-*,cert-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,-modernize-use-trailing-return-type"
+          extensions: "cpp,hpp,h"
+          files-changed-only: ${{ github.event_name == 'pull_request' }}
+          database: "builds/ninja-multi-vcpkg/compile_commands.json"
+          thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
+          no-lgtm: true
+
+      - name: Check for linting issues
+        if: steps.linter.outputs.checks-failed > 0
+        run: |
+          echo "Clang-tidy проверка не прошла."
+          echo "Обнаружено проблем: ${{ steps.linter.outputs.tidy-notes-count }}"
+          exit 1

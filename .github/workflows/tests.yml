@@ -30,15 +30,6 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
-
-      - name: Configure and build project
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'ninja-multi-vcpkg'
-          buildPreset: 'ninja-vcpkg-${{ matrix.config }}'
-
-      - name: Run tests
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'ninja-multi-vcpkg'
-          testPreset: 'test-${{ matrix.config }}'
+          uniqueId: '${{ matrix.os }}-${{ matrix.config }}'
+      - name: Run tests (full workflow)
+        run: cmake --workflow --preset test-${{ matrix.config }}
