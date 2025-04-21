@@ -92,7 +92,7 @@ jobs:
           extensions: "cpp,hpp,h"
           step-summary: 'true'
           no-lgtm: 'false'
-          files-changed-only: 'false'
+          lines-changed-only: 'true'
           thread-comments: 'update'
           format-review: 'true'
           tidy-review: 'true'
