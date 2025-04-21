@@ -1,9 +1,9 @@
 {
-  "name": "main",
-  "version-string": "latest",
+  "name": "finance-manager",
+  "version": "0.1.0",
   "dependencies": [
+    "sqlite3",
     "fmt",
-    "boost-config",
-    "sqlite3"
+    "gtest"
   ]
 }

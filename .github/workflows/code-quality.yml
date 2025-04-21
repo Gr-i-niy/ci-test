@@ -1,0 +1,101 @@
+name: Code quality
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - docs/**
+      - README.md
+      - .gitignore
+      - build/**
+      - out/**
+      - vcpkg/**
+      - assets/**
+      - cmake/**
+      - scripts/**
+      - shaders/**
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - docs/**
+      - README.md
+      - .gitignore
+      - build/**
+      - out/**
+      - vcpkg/**
+      - assets/**
+      - cmake/**
+      - scripts/**
+      - shaders/**
+
+jobs:
+#  format-check:
+#    name: Code Formatting Check
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          submodules: true
+#
+#      - uses: lukka/get-cmake@latest
+#
+#      - name: Install clang-format
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y clang-format
+#
+#      - name: Restore from cache and setup vcpkg
+#        uses: lukka/run-vcpkg@v11
+#        with:
+#          vcpkgJsonGlob: 'vcpkg.json'
+#
+#      - name: Check code formatting
+#        id: format-check
+#        run: |
+#          cmake --preset ninja-multi-vcpkg
+#          cmake --build --preset ninja-vcpkg-check-format
+
+  cpp-linter:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Restore from cache and setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Configure project
+        run: |
+          cmake --preset ninja-multi-vcpkg
+
+      - uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          ignore: 'builds|.github|cmake-build-debug|vcpkg'
+          version: '19'
+          style: 'file'
+          database: 'builds/ninja-multi-vcpkg'
+          extensions: "cpp,hpp,h"
+          step-summary: 'true'
+          lines-changed-only: 'true'
+          thread-comments: 'update'
+          format-review: 'true'
+          tidy-review: 'true'
+
+      - name: Fail fast?!
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1
