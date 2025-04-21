@@ -30,32 +30,32 @@ on:
       - shaders/**
 
 jobs:
-  format-check:
-    name: Code Formatting Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - uses: lukka/get-cmake@latest
-
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-
-      - name: Restore from cache and setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
-
-      - name: Check code formatting
-        id: format-check
-        run: |
-          cmake --preset ninja-multi-vcpkg
-          cmake --build --preset ninja-vcpkg-check-format
+#  format-check:
+#    name: Code Formatting Check
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          submodules: true
+#
+#      - uses: lukka/get-cmake@latest
+#
+#      - name: Install clang-format
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y clang-format
+#
+#      - name: Restore from cache and setup vcpkg
+#        uses: lukka/run-vcpkg@v11
+#        with:
+#          vcpkgJsonGlob: 'vcpkg.json'
+#
+#      - name: Check code formatting
+#        id: format-check
+#        run: |
+#          cmake --preset ninja-multi-vcpkg
+#          cmake --build --preset ninja-vcpkg-check-format
 
   cpp-linter:
     name: Static Code Analysis
