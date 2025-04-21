@@ -91,7 +91,6 @@ jobs:
           database: 'builds/ninja-multi-vcpkg'
           extensions: "cpp,hpp,h"
           step-summary: 'true'
-          no-lgtm: 'false'
           lines-changed-only: 'true'
           thread-comments: 'update'
           format-review: 'true'
